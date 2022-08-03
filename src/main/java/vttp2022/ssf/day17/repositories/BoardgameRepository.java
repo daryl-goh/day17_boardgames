@@ -1,11 +1,11 @@
 package vttp2022.ssf.day17.repositories;
 
-import java.time.Duration;
-import java.util.Optional;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Repository;
@@ -13,23 +13,26 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class BoardgameRepository {
 
-    @Value("${boardgame.cache.duration}")
-    private Long cacheTime;
-    
-    @Autowired
-    @Qualifier("redislab")
+    @Autowired @Qualifier("redislab")
     private RedisTemplate<String, String> redisTemplate;
 
-    public void save(String id, String payload) {
-        ValueOperations<String, String> valueOp = redisTemplate.opsForValue();
-        valueOp.set(id, payload, Duration.ofMinutes(cacheTime)); // cache expires after a certain time
+    public Integer count() {
+        Set<String> keys = redisTemplate.keys("[0-9]*");
+        return keys.size();
+    }
+    public List<String> keys() {
+        Set<String> keys = redisTemplate.keys("[0-9]*");
+        List<String> result = new LinkedList<>(keys);
+        return result.stream()
+                .map(v -> Integer.parseInt(v))
+                .sorted()
+                .map(v -> v.toString())
+                .toList();
     }
 
-    public Optional<String> get(String id) {
-        ValueOperations<String, String> valueOp = redisTemplate.opsForValue();
-        String value = valueOp.get(id);
-        if (null == value) 
-            return Optional.empty(); // empty box
-        return Optional.of(value); // box with data
+    public String get(String id) {
+        ValueOperations<String, String> valueOps = redisTemplate.opsForValue();
+        return valueOps.get(id);
     }
+    
 }
